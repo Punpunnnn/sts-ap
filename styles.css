@@ -1,0 +1,67 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+}
+
+/* Navbar */
+.navbar {
+  background: #1f2d3d;
+  color: white;
+  padding: 12px 20px;
+  display: flex;
+  justify-content: space-between;
+}
+
+button {
+  padding: 6px 10px;
+  margin-left: 10px;
+  border: none;
+  background: #3498db;
+  color: white;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+/* Table */
+.table-container {
+  height: calc(100vh - 50px);
+  overflow: auto;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 1400px;
+}
+
+th, td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  min-width: 140px;
+}
+
+/* Header sticky */
+th {
+  position: sticky;
+  top: 0;
+  background: #ecf0f1;
+  z-index: 2;
+}
+
+/* First column sticky */
+td:first-child, th:first-child {
+  position: sticky;
+  left: 0;
+  background: #f9fafb;
+  z-index: 1;
+}
+
+/* Hover */
+td:hover {
+  background: #eef6ff;
+}
+
+/* Active */
+td:focus {
+  outline: 2px solid #3498db;
+}

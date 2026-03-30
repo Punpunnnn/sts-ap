@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AP Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- Navbar -->
+<div class="navbar">
+  <div class="title">AP Dashboard</div>
+  <div class="menu">
+    <button onclick="showPage('input')">Input Data AP</button>
+    <button onclick="showPage('daftar')">Daftar AP</button>
+    <button onclick="showPage('gabungan')">Gabungan PI</button>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- INPUT -->
+  <div id="inputPage" class="page">
+    <h2>Input Data AP</h2>
+    <form id="formAP">
+      <input placeholder="No Resi" id="resi">
+      <input placeholder="Customer" id="customer">
+      <input placeholder="Origin" id="origin">
+      <input placeholder="Destination" id="destination">
+      <button type="submit">Submit</button>
+    </form>
+  </div>
+
+  <!-- DAFTAR AP -->
+  <div id="daftarPage" class="page hidden">
+    <h2>Daftar AP</h2>
+    <div class="table-container">
+      <table id="tableDaftar">
+        <thead></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- GABUNGAN PI -->
+  <div id="gabunganPage" class="page hidden">
+    <h2>Gabungan PI (AP Verified)</h2>
+    <div class="table-container">
+      <table id="tableGabungan">
+        <thead></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
