@@ -1,61 +1,231 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <title>AP Dashboard</title>
-  <link rel="stylesheet" href="styles.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JNE AP — PT Sarana Transport Persada</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-<!-- Navbar -->
-<div class="navbar">
-  <div class="title">AP Dashboard</div>
-  <div class="menu">
-    <button onclick="showPage('input')">Input Data AP</button>
-    <button onclick="showPage('daftar')">Daftar AP</button>
-    <button onclick="showPage('gabungan')">Gabungan PI</button>
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="brand">JNE · AP</div>
+    <div class="sub">Sarana Transport Persada</div>
+    <div class="storage-badge" id="storage-badge">○ No data</div>
+  </div>
+  <div class="sidebar-nav">
+    <!-- Flow Pipeline -->
+    <div class="flow-pipeline">
+      <div class="flow-stage">
+        <div class="flow-dot" style="background:#1a4b8c"></div>
+        <div class="flow-label">JNE PI Check</div>
+        <div class="flow-num" id="fp-jne">0</div>
+      </div>
+      <div class="flow-arrow-v"></div>
+      <div class="flow-stage">
+        <div class="flow-dot" style="background:#1a6b3c"></div>
+        <div class="flow-label">Gabungan PI</div>
+        <div class="flow-num" id="fp-gabungan">0</div>
+      </div>
+      <div class="flow-arrow-v"></div>
+      <div class="flow-stage">
+        <div class="flow-dot" style="background:#b45309"></div>
+        <div class="flow-label">Daftar AP</div>
+        <div class="flow-num" id="fp-daftarap">0</div>
+      </div>
+    </div>
+
+    <div class="nav-group-label">Sheets</div>
+    <div class="nav-item" onclick="switchSheet('jne')" id="nav-jne">
+      <span class="ni">▤</span> JNE PI Check
+      <span class="nav-count" id="nc-jne">0</span>
+    </div>
+    <div class="nav-item" onclick="switchSheet('gabungan')" id="nav-gabungan">
+      <span class="ni">▤</span> Gabungan PI
+      <span class="nav-count" id="nc-gabungan">0</span>
+    </div>
+    <div class="nav-item active" onclick="switchSheet('daftarap')" id="nav-daftarap">
+      <span class="ni">▤</span> Daftar AP
+      <span class="nav-count" id="nc-daftarap">0</span>
+    </div>
+    <div class="nav-group-label">Referensi</div>
+    <div class="nav-item" onclick="switchSheet('sla')" id="nav-sla">
+      <span class="ni">▤</span> SLA
+      <span class="nav-count" id="nc-sla">0</span>
+    </div>
+    <div class="nav-item" onclick="switchSheet('price')" id="nav-price">
+      <span class="ni">▤</span> PRICE
+      <span class="nav-count" id="nc-price">0</span>
+    </div>
+  </div>
+  <div class="sidebar-footer">
+    <button class="sb-foot-btn" onclick="openImportModal()">⤓ Import CSV ke JNE</button>
+    <button class="sb-foot-btn" onclick="exportCSV()">↓ Export CSV Sheet Ini</button>
+    <button class="sb-foot-btn danger" onclick="confirmReset()">⚠ Reset Semua Data</button>
+    <div class="sb-ver">v2.0 · localStorage · 2026</div>
+  </div>
+</nav>
+
+<!-- WORKBOOK -->
+<div class="workbook">
+  <div class="toolbar">
+    <button class="tb-btn primary" onclick="addRow()" id="btn-add">＋ Baris</button>
+    <button class="tb-btn" onclick="deleteSelectedRow()" id="btn-del">✕ Hapus</button>
+    <div class="tb-sep"></div>
+    <input class="tb-input" id="tb-search" placeholder="🔍 Cari..." oninput="filterRows(this.value)">
+    <div class="tb-sep"></div>
+    <select class="tb-select" id="tb-filter-status" onchange="filterByStatus(this.value)">
+      <option value="">Semua Status</option>
+      <option value="Verified">Verified</option>
+      <option value="Pending">Pending</option>
+      <option value="DONE">DONE</option>
+      <option value="Review">Review</option>
+    </select>
+    <div class="tb-sep"></div>
+    <button class="tb-btn" onclick="freezeToggle()" id="btn-freeze">❄ Freeze</button>
+    <button class="tb-btn" onclick="togglePanel()" id="btn-panel">⊞ Panel</button>
+    <div class="tb-sep"></div>
+    <span class="tb-label" id="tb-stats"></span>
+  </div>
+
+  <!-- FLOW/LOCKED BANNER -->
+  <div class="flow-banner" id="flow-banner">
+    <span>⟳</span>
+    <span id="flow-banner-msg">Data Gabungan PI & Daftar AP dikalkulasi otomatis dari JNE PI Check.</span>
+    <span class="flow-banner-close" onclick="closeBanner('flow-banner')">×</span>
+  </div>
+  <div class="locked-banner" id="locked-banner">
+    <span>🔒</span>
+    <span>Sheet ini <b>read-only</b> — data diturunkan otomatis dari JNE PI Check. Edit di sheet JNE PI Check.</span>
+  </div>
+
+  <div class="formula-bar">
+    <div class="cell-ref" id="cell-ref">A1</div>
+    <div class="formula-icon">ƒx</div>
+    <input class="formula-input" id="formula-input" placeholder="Pilih sel untuk melihat nilai..." readonly>
+  </div>
+
+  <div style="display:flex; flex:1; overflow:hidden">
+    <div class="sheet-area">
+      <div class="sheet-scroll" id="sheet-scroll">
+        <table class="grid-table" id="grid-table">
+          <thead><tr class="col-header" id="col-header-row"></tr></thead>
+          <tbody id="grid-body"></tbody>
+        </table>
+      </div>
+
+      <div class="sheet-tabs" id="sheet-tabs">
+        <div class="sheet-tab" onclick="switchSheet('jne')">
+          <span class="tab-dot" style="background:#1a4b8c"></span> JNE PI Check
+        </div>
+        <div class="sheet-tab" onclick="switchSheet('gabungan')">
+          <span class="tab-dot" style="background:#1a6b3c"></span> Gabungan PI
+          <span class="tab-lock">🔒</span>
+        </div>
+        <div class="sheet-tab active" onclick="switchSheet('daftarap')">
+          <span class="tab-dot" style="background:#b45309"></span> Daftar AP
+          <span class="tab-lock">🔒</span>
+        </div>
+        <div class="sheet-tab" onclick="switchSheet('sla')">
+          <span class="tab-dot" style="background:#6b3a1a"></span> SLA
+        </div>
+        <div class="sheet-tab" onclick="switchSheet('price')">
+          <span class="tab-dot" style="background:#5a5a56"></span> PRICE
+        </div>
+      </div>
+
+      <div class="status-bar">
+        <div class="sb-item">Sheet: <span id="sb-sheet">Daftar AP</span></div>
+        <div class="sb-sep"></div>
+        <div class="sb-item">Baris: <span id="sb-rows">0</span></div>
+        <div class="sb-sep"></div>
+        <div class="sb-item">Sum: <span id="sb-sum">—</span></div>
+        <div class="sb-sep"></div>
+        <div class="sb-item">Avg: <span id="sb-avg">—</span></div>
+        <div class="sb-sep"></div>
+        <div class="sb-item">Tersimpan: <span id="sb-saved">—</span></div>
+      </div>
+    </div>
+
+    <!-- SIDE PANEL -->
+    <div class="side-panel" id="side-panel">
+      <div class="sp-header">
+        <div class="sp-title" id="sp-title">Detail Baris</div>
+        <div class="sp-close" onclick="closePanel()">×</div>
+      </div>
+      <div class="sp-body" id="sp-body"></div>
+      <div class="sp-footer">
+        <button class="sp-btn" onclick="closePanel()">Tutup</button>
+        <button class="sp-btn primary" onclick="savePanelRow()" id="sp-save-btn">Simpan</button>
+      </div>
+    </div>
   </div>
 </div>
 
-<!-- CONTENT -->
-<div class="content">
-
-  <!-- INPUT -->
-  <div id="inputPage" class="page">
-    <h2>Input Data AP</h2>
-    <form id="formAP">
-      <input placeholder="No Resi" id="resi">
-      <input placeholder="Customer" id="customer">
-      <input placeholder="Origin" id="origin">
-      <input placeholder="Destination" id="destination">
-      <button type="submit">Submit</button>
-    </form>
-  </div>
-
-  <!-- DAFTAR AP -->
-  <div id="daftarPage" class="page hidden">
-    <h2>Daftar AP</h2>
-    <div class="table-container">
-      <table id="tableDaftar">
-        <thead></thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- GABUNGAN PI -->
-  <div id="gabunganPage" class="page hidden">
-    <h2>Gabungan PI (AP Verified)</h2>
-    <div class="table-container">
-      <table id="tableGabungan">
-        <thead></thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </div>
-
+<!-- CONTEXT MENU -->
+<div class="ctx-menu" id="ctx-menu" style="display:none" onclick="event.stopPropagation()">
+  <div class="ctx-item" onclick="ctxCopy()"><span class="ctx-icon">⎘</span> Salin Nilai</div>
+  <div class="ctx-item" onclick="ctxPaste()"><span class="ctx-icon">⎗</span> Tempel Nilai</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" onclick="ctxInsertAbove()"><span class="ctx-icon">↑</span> Sisipkan di Atas</div>
+  <div class="ctx-item" onclick="ctxInsertBelow()"><span class="ctx-icon">↓</span> Sisipkan di Bawah</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" onclick="ctxOpenPanel()"><span class="ctx-icon">⊞</span> Buka Panel Detail</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item danger" onclick="ctxDeleteRow()"><span class="ctx-icon">✕</span> Hapus Baris</div>
 </div>
 
-<script src="script.js"></script>
+<!-- DROPDOWN POPUP -->
+<div class="dd-popup" id="dd-popup" style="display:none" onclick="event.stopPropagation()"></div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- IMPORT MODAL -->
+<div class="modal-overlay" id="import-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">⤓ Import CSV → JNE PI Check</div>
+      <div class="modal-close" onclick="closeModal('import-modal')">×</div>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:11px;color:var(--text2);margin-bottom:10px;">Tempel data CSV di bawah. Baris pertama harus berisi header kolom.</p>
+      <p style="font-size:10px;color:var(--text3);margin-bottom:8px;">Kolom yang didukung: <code style="background:var(--bg);padding:1px 4px;border-radius:2px;">no_resi, no_pi, tgl_pi, no_ap, vendor, resi_vendor, tanggal, asal, kota_tujuan, layanan, berat, koli, biaya_kirim, remarks, ver_sys, ver_bast, ver_ap, harga_final</code></p>
+      <textarea class="modal-textarea" id="import-textarea" placeholder="no_resi,no_pi,tgl_pi,vendor,tanggal,asal,kota_tujuan,layanan,berat,koli,biaya_kirim&#10;JD0072345820,PI-2026-040,2026-03-01,JNE Express,2026-03-01,Jakarta,Yogyakarta,REG,2.5,1,95000"></textarea>
+      <div class="modal-hint">
+        ✓ Data akan ditambahkan ke baris yang ada (tidak menghapus data lama)<br>
+        ✓ Field verifikasi default: Pending<br>
+        ✓ Setelah import, ubah Verifikasi AP ke "Verified" untuk memindahkan ke Gabungan PI
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn" onclick="closeModal('import-modal')">Batal</button>
+      <button class="modal-btn primary" onclick="doImportCSV()">Import Data</button>
+    </div>
+  </div>
+</div>
+
+<!-- RESET CONFIRM MODAL -->
+<div class="modal-overlay" id="reset-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">⚠ Reset Semua Data</div>
+      <div class="modal-close" onclick="closeModal('reset-modal')">×</div>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:12px;color:var(--text);margin-bottom:8px;font-weight:600;">Apakah kamu yakin ingin mereset semua data?</p>
+      <p style="font-size:11px;color:var(--text2);">Tindakan ini akan menghapus semua data dari localStorage dan mengembalikan ke data contoh awal. Data yang sudah diedit <b>tidak dapat dikembalikan</b>.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn" onclick="closeModal('reset-modal')">Batal</button>
+      <button class="modal-btn danger" onclick="doReset()">Reset Sekarang</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
 </body>
 </html>
